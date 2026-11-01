@@ -1,0 +1,9 @@
+{
+  "name": "garantia-by-borges-rangel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot server.ts"
+  }
+}

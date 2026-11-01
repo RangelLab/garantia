@@ -1,0 +1,13 @@
+{
+  "name": "Garantia By Borges & Rangel",
+  "short_name": "Garantia",
+  "description": "Comprovantes e prazos de garantia organizados em um só lugar.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0e1412",
+  "theme_color": "#101815",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
