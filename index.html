@@ -37,10 +37,17 @@
           <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3 35 11.5v17L20 37 5 28.5v-17L20 3Z"/><path d="M13 25V15h8a4 4 0 0 1 1.1 7.8L26 28M13 20h7"/></svg></span>
           <span class="brand-copy"><strong>Garantia</strong><small>By Borges &amp; Rangel</small></span>
         </a>
-        <div class="topbar-actions">
-          <span class="account-email" id="account-email"></span>
-          <button class="secondary-button signout-button" id="sign-out" type="button">Sair</button>
-          <button class="icon-button" id="theme-toggle" type="button" aria-label="Alternar tema" title="Alternar tema"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg></button>
+        <div class="topbar-actions settings-menu-wrap">
+          <button class="icon-button settings-button" id="open-settings-menu" type="button" aria-label="Abrir configurações" aria-expanded="false" aria-controls="settings-menu" title="Configurações"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+          <div class="settings-menu" id="settings-menu" hidden>
+            <button type="button" id="menu-user-data"><span class="menu-item-icon">◎</span>Dados do usuário</button>
+            <button type="button" id="menu-theme"><span class="menu-item-icon">◐</span><span id="menu-theme-label">Modo claro</span></button>
+            <button type="button" id="menu-export-backup"><span class="menu-item-icon">↓</span>Exportar backup</button>
+            <button type="button" id="menu-import-backup"><span class="menu-item-icon">↑</span>Importar backup</button>
+            <button type="button" class="menu-danger" id="menu-clear-data"><span class="menu-item-icon">⌫</span>Apagar todos os dados</button>
+            <button type="button" id="menu-version"><span class="menu-item-icon">ⓘ</span>Versão</button>
+            <button type="button" id="menu-sign-out"><span class="menu-item-icon">↪</span>Sair</button>
+          </div>
         </div>
       </header>
 
@@ -79,11 +86,28 @@
         </section>
 
         <footer class="app-footer">
-          <p><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg> Produtos e comprovantes sincronizados com sua conta.</p>
-          <div class="footer-actions"><button type="button" id="export-data">Exportar backup</button><label class="import-label" for="import-file">Importar backup</label><input id="import-file" type="file" accept="application/json,.json" hidden /><button type="button" id="clear-data">Apagar todos os dados</button></div>
+          <p><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg> Produtos e comprovantes sincronizados com sua conta.</p><span class="app-version" id="app-version">v1.0.0</span>
+          <input id="import-file" type="file" accept="application/json,.json" hidden />
         </footer>
       </main>
     </div>
+
+    <dialog class="product-dialog version-dialog" id="version-dialog" aria-labelledby="version-title"><div><div class="dialog-heading"><div><p class="eyebrow">GARANTIA BY BORGES &amp; RANGEL</p><h2 id="version-title">Histórico de versões</h2></div><button type="button" class="icon-button close-dialog" id="close-version" aria-label="Fechar">×</button></div><div class="version-current">Versão instalada <strong id="version-current">v1.0.0</strong></div><ol class="version-list" id="version-list"><li class="version-loading">Carregando histórico…</li></ol></div></dialog>
+
+    <dialog class="product-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <form id="settings-form">
+        <div class="dialog-heading"><div><p class="eyebrow">SUA CONTA</p><h2 id="settings-title">Configurações</h2></div><button type="button" class="icon-button close-dialog" id="close-settings" aria-label="Fechar">×</button></div>
+        <div class="form-grid settings-grid">
+          <label class="field full-field">Nome<input id="settings-name" type="text" maxlength="100" autocomplete="name" placeholder="Seu nome" /></label>
+          <label class="field full-field">E-mail<input id="settings-email" type="email" maxlength="254" autocomplete="email" required /></label>
+          <label class="field full-field">Nova senha <span>(deixe em branco para manter a atual)</span><input id="settings-password" type="password" minlength="6" maxlength="128" autocomplete="new-password" placeholder="Mínimo de 6 caracteres" /></label>
+        </div>
+        <p class="form-error" id="settings-error" role="alert" hidden></p>
+        <p class="settings-hint" id="settings-hint">Ao alterar o e-mail, o Supabase poderá solicitar confirmação no novo endereço.</p>
+        <button type="button" class="danger-button delete-account-button" id="settings-delete-account">Excluir minha conta</button>
+        <div class="dialog-actions settings-actions"><button type="button" class="secondary-button" id="cancel-settings">Cancelar</button><button type="submit" class="primary-button" id="save-settings">Salvar alterações</button></div>
+      </form>
+    </dialog>
 
     <dialog class="product-dialog" id="product-dialog" aria-labelledby="dialog-title">
       <form id="product-form">
@@ -107,12 +131,14 @@
     <dialog class="confirm-dialog" id="confirm-dialog"><div class="confirm-mark"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></div><h2 id="confirm-title">Apagar produto?</h2><p id="confirm-copy">O cadastro e seu comprovante serão removidos deste aparelho.</p><div class="dialog-actions"><button type="button" class="secondary-button" id="confirm-cancel">Cancelar</button><button type="button" class="danger-button" id="confirm-delete">Apagar produto</button></div></dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog class="product-dialog details-dialog" id="details-dialog" aria-labelledby="details-title"><div><div class="dialog-heading"><div><p class="eyebrow">DETALHES DO PRODUTO</p><h2 id="details-title">Produto</h2></div><button type="button" class="icon-button close-dialog" id="close-details" aria-label="Fechar">×</button></div><dl class="details-list"><div><dt>Marca</dt><dd id="details-model">—</dd></div><div><dt>Loja</dt><dd id="details-store">—</dd></div><div><dt>Data da compra</dt><dd id="details-purchase">—</dd></div><div><dt>Prazo de garantia</dt><dd id="details-warranty">—</dd></div><div><dt>Vencimento</dt><dd id="details-expiry">—</dd></div><div class="details-full"><dt>Anotações</dt><dd id="details-notes">—</dd></div></dl><div class="details-actions"><button type="button" class="secondary-button" id="details-receipt" hidden>Ver comprovante</button><button type="button" class="primary-button" id="details-edit">Editar</button></div></div></dialog>
+
     <template id="product-template">
       <article class="product-card">
         <div class="product-card-head"><span class="product-symbol"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 13h8m-8 4h6"/></svg></span><span class="status-pill"></span><button class="card-menu-trigger" type="button" aria-label="Opções do produto">•••</button><div class="card-menu" hidden><button type="button" data-action="edit">Editar</button><button type="button" data-action="receipt" hidden>Ver comprovante</button><button type="button" data-action="delete" class="menu-danger">Apagar</button></div></div>
-        <p class="product-store"></p><h3 class="product-name"></h3><p class="product-model"></p>
+        <h3 class="product-name"></h3><p class="product-model"></p>
         <div class="warranty-track"><div class="track-labels"><span>Compra</span><span class="remaining-label"></span><span>Fim da garantia</span></div><div class="track-line"><span class="track-progress"></span><span class="track-dot"></span></div><div class="track-dates"><strong class="purchase-label"></strong><strong class="expiry-label"></strong></div></div>
-        <div class="product-card-foot"><span class="days-badge"></span><button class="details-button" type="button" data-action="edit">Ver detalhes <span>→</span></button></div>
+        <div class="product-card-foot"><span class="days-badge"></span><button class="details-button" type="button" data-action="details">Ver detalhes <span>→</span></button></div>
       </article>
     </template>
 

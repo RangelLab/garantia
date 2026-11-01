@@ -74,7 +74,12 @@ function render() {
     const matchesFilter = activeFilter === "all" || activeFilter === statusOf(product);
     const matchesQuery = !query || `${product.name} ${product.store || ""} ${product.model || ""}`.toLocaleLowerCase("pt-BR").includes(query);
     return matchesFilter && matchesQuery;
-  }).sort((a, b) => a.expiry_date.localeCompare(b.expiry_date));
+  }).sort((a, b) => {
+    const aExpired = statusOf(a) === "expired";
+    const bExpired = statusOf(b) === "expired";
+    if (aExpired !== bExpired) return aExpired ? 1 : -1;
+    return a.expiry_date.localeCompare(b.expiry_date);
+  });
   grid.replaceChildren();
   for (const product of filtered) grid.append(createCard(product));
   emptyState.classList.toggle("visible", filtered.length === 0);
@@ -102,7 +107,6 @@ function createCard(product) {
   card.dataset.id = product.id;
   card.querySelector(".status-pill").classList.add(`status-${status}`);
   card.querySelector(".status-pill").textContent = status === "active" ? "Em dia" : status === "soon" ? "Vencendo em breve" : "Expirada";
-  card.querySelector(".product-store").textContent = product.store || "Produto sem loja informada";
   card.querySelector(".product-name").textContent = product.name;
   card.querySelector(".product-model").textContent = product.model || " ";
   card.querySelector(".purchase-label").textContent = formatDate(product.purchase_date);
@@ -128,10 +132,28 @@ function createCard(product) {
   card.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => {
     card.querySelector(".card-menu").hidden = true;
     if (button.dataset.action === "edit") openForm(product);
+    if (button.dataset.action === "details") openDetails(product);
     if (button.dataset.action === "receipt") void openReceipt(product);
     if (button.dataset.action === "delete") askDelete(product);
   }));
   return card;
+}
+
+function openDetails(product) {
+  $("#details-title").textContent = product.name || "Produto";
+  $("#details-model").textContent = product.model || "Não informada";
+  $("#details-store").textContent = product.store || "Não informada";
+  $("#details-purchase").textContent = formatDate(product.purchase_date);
+  $("#details-warranty").textContent = `${product.warranty_months} ${Number(product.warranty_months) === 1 ? "mês" : "meses"}`;
+  $("#details-expiry").textContent = formatDate(product.expiry_date);
+  $("#details-notes").textContent = product.notes || "Nenhuma anotação";
+  $("#details-receipt").hidden = !product.receipt_path;
+  $("#details-receipt").onclick = () => void openReceipt(product);
+  $("#details-edit").onclick = () => {
+    $("#details-dialog").close();
+    openForm(product);
+  };
+  $("#details-dialog").showModal();
 }
 
 function resetForm() {
@@ -166,7 +188,6 @@ function openForm(product) {
     }
   }
   dialog.showModal();
-  $("#product-name").focus();
 }
 
 async function openReceipt(product) {
@@ -393,11 +414,96 @@ async function clearAllData() {
   showToast("Os produtos da sua conta foram apagados.");
 }
 
+function openSettings() {
+  if (!currentUser) return;
+  const metadata = currentUser.user_metadata || {};
+  $("#settings-name").value = metadata.full_name || metadata.display_name || metadata.name || "";
+  $("#settings-email").value = currentUser.email || "";
+  $("#settings-password").value = "";
+  $("#settings-error").hidden = true;
+  $("#settings-hint").textContent = "Ao alterar o e-mail, o Supabase poderá solicitar confirmação no novo endereço.";
+  $("#settings-dialog").showModal();
+  closeSettingsMenu();
+}
+
+async function saveSettings(event) {
+  event.preventDefault();
+  const name = $("#settings-name").value.trim();
+  const email = $("#settings-email").value.trim();
+  const password = $("#settings-password").value;
+  const errorEl = $("#settings-error");
+  errorEl.hidden = true;
+  if (!email) {
+    errorEl.textContent = "Informe um e-mail válido.";
+    errorEl.hidden = false;
+    return;
+  }
+  if (password && password.length < 6) {
+    errorEl.textContent = "A nova senha precisa ter pelo menos 6 caracteres.";
+    errorEl.hidden = false;
+    return;
+  }
+  const metadata = currentUser.user_metadata || {};
+  const changes = {};
+  if (email !== (currentUser.email || "")) changes.email = email;
+  if (password) changes.password = password;
+  if (name !== (metadata.full_name || metadata.display_name || metadata.name || "")) {
+    changes.data = { ...metadata, full_name: name };
+  }
+  if (!Object.keys(changes).length) {
+    $("#settings-dialog").close();
+    return showToast("Nenhuma alteração para salvar.");
+  }
+  const button = $("#save-settings");
+  button.disabled = true;
+  button.textContent = "Salvando…";
+  try {
+    const { data, error } = await supabase.auth.updateUser(changes);
+    if (error) throw error;
+    if (data.user) {
+      currentUser = data.user;
+
+    }
+    $("#settings-password").value = "";
+    $("#settings-dialog").close();
+    showToast(changes.email ? "Dados salvos. Confirme o novo e-mail, se solicitado." : "Dados da conta atualizados.");
+  } catch (error) {
+    errorEl.textContent = friendlyError(error, "Não foi possível atualizar os dados da conta.");
+    errorEl.hidden = false;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Salvar";
+  }
+}
+
+async function deleteAccount() {
+  const confirmed = confirm("Excluir definitivamente sua conta Borges & Rangel? Todos os produtos e comprovantes desta conta serão apagados. Esta ação não pode ser desfeita.");
+  if (!confirmed) return;
+  const button = $("#settings-delete-account");
+  button.disabled = true;
+  button.textContent = "Excluindo conta…";
+  try {
+    const { error } = await supabase.functions.invoke("request-account-deletion", { method: "POST" });
+    if (error) throw error;
+    $("#settings-dialog").close();
+    showToast(data?.message || "Solicitação preparada. Verifique seu e-mail para confirmar a exclusão.");
+  } catch (error) {
+    showToast(friendlyError(error, "Não foi possível excluir a conta. Verifique se a função segura delete-account está implantada no Supabase."));
+  } finally {
+    button.disabled = false;
+    button.textContent = "Excluir minha conta";
+  }
+}
+
+function closeSettingsMenu() {
+  $("#settings-menu").hidden = true;
+  $("#open-settings-menu").setAttribute("aria-expanded", "false");
+}
+
 function setTheme(theme) {
   document.body.classList.toggle("light", theme === "light");
   localStorage.setItem("garantia-theme", theme);
-  $("#theme-toggle").setAttribute("aria-label", theme === "light" ? "Ativar tema escuro" : "Ativar tema claro");
-  $("#theme-toggle").title = theme === "light" ? "Ativar tema escuro" : "Ativar tema claro";
+  $("#menu-theme-label").textContent = theme === "light" ? "Modo escuro" : "Modo claro";
 }
 
 function showLoginMessage(message, isError = true) {
@@ -419,11 +525,57 @@ async function applySession(session) {
   }
   if (currentUser?.id === user.id) return;
   currentUser = user;
-  $("#account-email").textContent = user.email || "Conta conectada";
+
   $("#login-screen").hidden = true;
   $("#app-shell").hidden = false;
   try { await loadProducts(); }
   catch (error) { showToast(friendlyError(error, "Não foi possível carregar seus produtos.")); }
+}
+
+
+async function loadVersionHistory() {
+  const versionLabel = $("#app-version");
+  const currentLabel = $("#version-current");
+  const list = $("#version-list");
+  try {
+    const response = await fetch("./version-history.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Histórico indisponível");
+    const history = await response.json();
+    if (!Array.isArray(history) || !history.length) throw new Error("Histórico vazio");
+    const current = history[0].version;
+    versionLabel.textContent = `v${current}`;
+    currentLabel.textContent = `v${current}`;
+    list.replaceChildren();
+    for (const entry of history) {
+      const item = document.createElement("li");
+      const heading = document.createElement("div");
+      heading.className = "version-entry-heading";
+      const version = document.createElement("strong");
+      version.textContent = `v${entry.version}`;
+      const date = document.createElement("time");
+      date.dateTime = entry.date;
+      date.textContent = new Date(`${entry.date}T12:00:00`).toLocaleDateString("pt-BR");
+      heading.append(version, date);
+      const title = document.createElement("h3");
+      title.textContent = entry.title || "Atualização";
+      const changes = document.createElement("ul");
+      for (const change of entry.changes || []) {
+        const line = document.createElement("li");
+        line.textContent = change;
+        changes.append(line);
+      }
+      item.append(heading, title, changes);
+      list.append(item);
+    }
+  } catch {
+    versionLabel.textContent = "v1.0.0";
+    currentLabel.textContent = "v1.0.0";
+    list.replaceChildren();
+    const item = document.createElement("li");
+    item.className = "version-loading";
+    item.textContent = "Não foi possível carregar o histórico de versões.";
+    list.append(item);
+  }
 }
 
 function bindEvents() {
@@ -440,13 +592,15 @@ function bindEvents() {
     if (error) return showLoginMessage(/invalid login credentials/i.test(error.message) ? "E-mail ou senha incorretos." : friendlyError(error, "Não foi possível entrar."));
     await applySession(data.session);
   });
-  $("#sign-out").addEventListener("click", async () => {
+  $("#menu-sign-out").addEventListener("click", async () => {
     const { error } = await supabase.auth.signOut();
     if (error) showToast("Não foi possível sair da conta.");
   });
   $("#add-product").addEventListener("click", () => openForm());
   $("#empty-add").addEventListener("click", () => openForm());
   $("#close-dialog").addEventListener("click", () => dialog.close());
+  $("#close-details").addEventListener("click", () => $("#details-dialog").close());
+  $("#details-dialog").addEventListener("click", (event) => { if (event.target === $("#details-dialog")) $("#details-dialog").close(); });
   $("#cancel-dialog").addEventListener("click", () => dialog.close());
   form.addEventListener("submit", submitForm);
   $("#receipt-file").addEventListener("change", (event) => {
@@ -486,7 +640,14 @@ function bindEvents() {
   });
   $("#confirm-cancel").addEventListener("click", () => $("#confirm-dialog").close());
   $("#confirm-delete").addEventListener("click", () => void deleteProduct());
-  $("#export-data").addEventListener("click", () => void exportBackup().catch((error) => showToast(friendlyError(error, "Não foi possível exportar o backup."))));
+  $("#menu-export-backup").addEventListener("click", () => {
+    closeSettingsMenu();
+    void exportBackup().catch((error) => showToast(friendlyError(error, "Não foi possível exportar o backup.")));
+  });
+  $("#menu-import-backup").addEventListener("click", () => {
+    closeSettingsMenu();
+    $("#import-file").click();
+  });
   $("#import-file").addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -494,14 +655,30 @@ function bindEvents() {
     catch (error) { showToast(friendlyError(error, "Não foi possível importar o backup.")); }
     event.target.value = "";
   });
-  $("#clear-data").addEventListener("click", () => void clearAllData());
-  $("#theme-toggle").addEventListener("click", () => setTheme(document.body.classList.contains("light") ? "dark" : "light"));
+  $("#menu-clear-data").addEventListener("click", () => { closeSettingsMenu(); void clearAllData(); });
+  $("#open-settings-menu").addEventListener("click", () => {
+    const menu = $("#settings-menu");
+    menu.hidden = !menu.hidden;
+    $("#open-settings-menu").setAttribute("aria-expanded", String(!menu.hidden));
+  });
+  $("#menu-user-data").addEventListener("click", openSettings);
+  $("#menu-version").addEventListener("click", () => { closeSettingsMenu(); $("#version-dialog").showModal(); });
+  $("#close-version").addEventListener("click", () => $("#version-dialog").close());
+  $("#version-dialog").addEventListener("click", (event) => { if (event.target === $("#version-dialog")) $("#version-dialog").close(); });
+  $("#menu-theme").addEventListener("click", () => { setTheme(document.body.classList.contains("light") ? "dark" : "light"); closeSettingsMenu(); });
+  $("#close-settings").addEventListener("click", () => $("#settings-dialog").close());
+  $("#cancel-settings").addEventListener("click", () => $("#settings-dialog").close());
+  $("#settings-form").addEventListener("submit", saveSettings);
+  $("#settings-dialog").addEventListener("click", (event) => { if (event.target === $("#settings-dialog")) $("#settings-dialog").close(); });
+  $("#settings-delete-account").addEventListener("click", () => void deleteAccount());
+  document.addEventListener("click", (event) => { if (!event.target.closest(".settings-menu-wrap")) closeSettingsMenu(); });
   dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
 }
 
 async function init() {
   setTheme(localStorage.getItem("garantia-theme") || "dark");
   bindEvents();
+  void loadVersionHistory();
   if (!supabase) {
     showLoginMessage("A configuração do Supabase não foi encontrada.");
     $("#login-submit").disabled = true;

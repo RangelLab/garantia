@@ -1,9 +1,11 @@
 {
   "name": "garantia-by-borges-rangel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot server.ts"
+    "dev": "bun --hot server.ts",
+    "version:check": "node scripts/bump-version.mjs check",
+    "version:history": "node scripts/bump-version.mjs regenerate"
   }
 }

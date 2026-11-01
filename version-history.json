@@ -1,0 +1,63 @@
+[
+  {
+    "version": "1.1.0",
+    "date": "2026-11-01",
+    "timestamp": "2026-11-01T04:03:47.958Z",
+    "title": "sort expired warranties last",
+    "changes": [
+      "sort expired warranties last"
+    ]
+  },
+  {
+    "version": "1.0.5",
+    "date": "2026-11-01",
+    "timestamp": "2026-11-01T04:02:05.602Z",
+    "title": "keep app header sticky while scrolling",
+    "changes": [
+      "keep app header sticky while scrolling"
+    ]
+  },
+  {
+    "version": "1.0.4",
+    "date": "2026-11-01",
+    "timestamp": "2026-11-01T03:59:19.377Z",
+    "title": "compact product cards and remove excess whitespace",
+    "changes": [
+      "compact product cards and remove excess whitespace"
+    ]
+  },
+  {
+    "version": "1.0.3",
+    "date": "2026-11-01",
+    "timestamp": "2026-11-01T03:54:36.695Z",
+    "title": "refresh version history from network",
+    "changes": [
+      "refresh version history from network"
+    ]
+  },
+  {
+    "version": "1.0.2",
+    "date": "2026-11-01",
+    "timestamp": "2026-11-01T03:53:43.486Z",
+    "title": "add semantic version tooling",
+    "changes": [
+      "add semantic version tooling",
+      "automate semantic versioning on preview",
+      "correct semantic version script escaping",
+      "align package version with history"
+    ]
+  },
+  {
+    "version": "1.0.1",
+    "date": "2026-11-01",
+    "timestamp": "2026-11-01T00:00:00.000Z",
+    "title": "Detalhes separados da edição e inventário em duas colunas",
+    "changes": [
+      "Mostra nome do produto e marca nos cartões do inventário, mantendo a loja na visualização de detalhes.",
+      "Abre os detalhes em modo somente leitura e adiciona uma ação explícita para editar o cadastro.",
+      "Evita focar automaticamente os campos ao abrir o formulário de edição.",
+      "Organiza os produtos em duas colunas também na tela de celular.",
+      "Adiciona versão SemVer no rodapé e histórico de alterações no menu."
+    ]
+  }
+]
