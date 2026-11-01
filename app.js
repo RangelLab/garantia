@@ -2,6 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.3";
 
 const DB_TABLE = "warranty_products";
 const RECEIPT_BUCKET = "warranty-receipts";
+const RANGELLAB_EMAIL_CONFIRMATION_URL =
+  "https://rangellab.github.io/auth.html?email-change=1";
 const SOON_DAYS = 30;
 const MAX_RECEIPT_SIZE = 10 * 1024 * 1024;
 const ALLOWED_RECEIPT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "application/pdf"]);
@@ -458,7 +460,10 @@ async function saveSettings(event) {
   button.disabled = true;
   button.textContent = "Salvando…";
   try {
-    const { data, error } = await supabase.auth.updateUser(changes);
+    const { data, error } = await supabase.auth.updateUser(
+      changes,
+      changes.email ? { emailRedirectTo: RANGELLAB_EMAIL_CONFIRMATION_URL } : undefined,
+    );
     if (error) throw error;
     if (data.user) {
       currentUser = data.user;
