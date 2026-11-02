@@ -2,6 +2,18 @@
 
 Registro das versões do Garantia by Borges & Rangel. O versionamento segue SemVer (MAJOR.MINOR.PATCH), independente dos demais aplicativos.
 
+## v1.1.2 (2026-11-01)
+
+**Exibe o inventário em uma única coluna**
+
+- Organiza os cartões de produtos em uma única coluna em todas as larguras de tela.
+
+## v1.1.1 (2026-11-01)
+
+**Set redirect URL for email changes**
+
+- Set redirect URL for email changes
+
 ## v1.1.0 (2026-11-01)
 
 **sort expired warranties last**

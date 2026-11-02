@@ -118,3 +118,6 @@ body.light .version-current{background:#f5f8f4}
 body.light .topbar{
   background:color-mix(in srgb,var(--bg) 94%,transparent);
 }
+
+/* Inventário em coluna única em todas as larguras */
+.product-grid{grid-template-columns:minmax(0,1fr)}
