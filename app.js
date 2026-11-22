@@ -1,6 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.3";
+// O Garantia usa API própria e sessão independente no schema garantia.
 
-const DB_TABLE = "warranty_products";
+const DB_TABLE = "products";
 const RECEIPT_BUCKET = "warranty-receipts";
 const RANGELLAB_EMAIL_CONFIRMATION_URL =
   "https://rangellab.github.io/auth.html?email-change=1";
@@ -14,10 +14,30 @@ const emptyState = $("#empty-state");
 const template = $("#product-template");
 const dialog = $("#product-dialog");
 const form = $("#product-form");
-const config = window.GARANTIA_SUPABASE_CONFIG || {};
-const supabase = config.url && config.publishableKey
-  ? createClient(config.url, config.publishableKey, { auth: { persistSession: true, autoRefreshToken: true } })
-  : null;
+const API_URL = (window.GARANTIA_SUPABASE_CONFIG?.url || "").replace(/\/$/, "") + "/functions/v1/garantia-api";
+const SESSION_KEY = "garantia-session-v1";
+let accessToken = "", refreshToken = "";
+async function api(action, payload = {}, authenticated = true) {
+  const headers = { "Content-Type": "application/json" };
+  if (authenticated && accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  let response = await fetch(API_URL, { method: "POST", headers, body: JSON.stringify({ action, ...payload }) });
+  let data = await response.json().catch(() => ({}));
+  if (response.status === 401 && authenticated && refreshToken && action !== "refresh") {
+    const refreshed = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refresh_token: refreshToken }) });
+    const next = await refreshed.json().catch(() => ({}));
+    if (refreshed.ok && next.access_token) {
+      saveTokens(next);
+      headers.Authorization = `Bearer ${accessToken}`;
+      response = await fetch(API_URL, { method: "POST", headers, body: JSON.stringify({ action, ...payload }) });
+      data = await response.json().catch(() => ({}));
+    } else clearTokens();
+  }
+  if (!response.ok) throw new Error(data.error || "Falha na comunicação com o Garantia.");
+  return data;
+}
+function saveTokens(data) { accessToken=data.access_token; refreshToken=data.refresh_token; localStorage.setItem(SESSION_KEY,JSON.stringify({accessToken,refreshToken,user:data.user})); }
+function clearTokens() { accessToken=""; refreshToken=""; localStorage.removeItem(SESSION_KEY); }
+async function refreshSession() { if(!refreshToken)return false; try{const d=await api("refresh",{refresh_token:refreshToken},false);saveTokens(d);return true;}catch{clearTokens();return false;} }
 let currentUser = null;
 let products = [];
 let activeFilter = "all";
@@ -196,12 +216,7 @@ async function openReceipt(product) {
   const tab = window.open("about:blank", "_blank");
   if (!tab) return showToast("Permita a abertura de uma nova aba para visualizar o comprovante.");
   tab.opener = null;
-  const { data, error } = await supabase.storage.from(RECEIPT_BUCKET).createSignedUrl(product.receipt_path, 60);
-  if (error) {
-    tab.close();
-    return showToast("Não foi possível abrir o comprovante.");
-  }
-  tab.location.replace(data.signedUrl);
+  try { const d=await api("receipt_signed_url",{path:product.receipt_path}); tab.location.replace(d.url); } catch { tab.close(); showToast("Não foi possível abrir o comprovante."); }
 }
 
 async function submitForm(event) {
@@ -226,11 +241,7 @@ async function submitForm(event) {
     if (file) {
       const safeName = file.name.normalize("NFKD").replace(/[^\w.-]+/g, "-").slice(-100) || "comprovante";
       uploadedPath = `${currentUser.id}/${crypto.randomUUID()}-${safeName}`;
-      const { error: uploadError } = await supabase.storage.from(RECEIPT_BUCKET).upload(uploadedPath, file, {
-        cacheControl: "3600", contentType: file.type, upsert: false,
-      });
-      if (uploadError) throw uploadError;
-      receiptPath = uploadedPath;
+      const uploaded=await api("receipt_upload",{name:file.name,type:file.type,data:await fileToBase64(file)}); uploadedPath=uploaded.path; receiptPath=uploaded.path;
     }
     const payload = {
       user_id: currentUser.id,
@@ -244,19 +255,15 @@ async function submitForm(event) {
       receipt_path: receiptPath,
       updated_at: new Date().toISOString(),
     };
-    const result = previous
-      ? await supabase.from(DB_TABLE).update(payload).eq("id", id).eq("user_id", currentUser.id).select().single()
-      : await supabase.from(DB_TABLE).insert(payload).select().single();
-    if (result.error) throw result.error;
+    await api("product_save",{product:{...payload,...(previous?{id}: {})}});
     if (oldPath && oldPath !== receiptPath) {
-      const { error: removeError } = await supabase.storage.from(RECEIPT_BUCKET).remove([oldPath]);
-      if (removeError) showToast("Produto salvo; o comprovante antigo não pôde ser removido.");
+      await api("receipt_delete",{path:oldPath}).catch(()=>showToast("Produto salvo; o comprovante antigo não pôde ser removido."));
     }
     dialog.close();
     await loadProducts();
     showToast(previous ? "Produto atualizado na sua conta." : "Produto salvo na sua conta.");
   } catch (err) {
-    if (uploadedPath) await supabase.storage.from(RECEIPT_BUCKET).remove([uploadedPath]);
+    if (uploadedPath) await api("receipt_delete", { path: uploadedPath }).catch(() => {});
     setFormError(friendlyError(err, "Não foi possível salvar. Confira sua conexão e tente de novo."));
   } finally {
     $("#save-product").disabled = false;
@@ -295,16 +302,7 @@ async function deleteProduct() {
   if (!pendingDelete) return;
   const product = pendingDelete;
   $("#confirm-delete").disabled = true;
-  const { error } = await supabase.from(DB_TABLE).delete().eq("id", product.id).eq("user_id", currentUser.id);
-  if (error) showToast(friendlyError(error, "Não foi possível apagar o produto."));
-  else {
-    if (product.receipt_path) {
-      const { error: storageError } = await supabase.storage.from(RECEIPT_BUCKET).remove([product.receipt_path]);
-      if (storageError) showToast("Produto removido; o comprovante antigo não pôde ser apagado.");
-    }
-    await loadProducts();
-    showToast("Produto removido da sua conta.");
-  }
+  try { await api("product_delete",{id:product.id}); await loadProducts(); showToast("Produto removido da sua conta."); } catch(error) { showToast(friendlyError(error,"Não foi possível apagar o produto.")); }
   pendingDelete = null;
   $("#confirm-delete").disabled = false;
   $("#confirm-dialog").close();
@@ -312,9 +310,7 @@ async function deleteProduct() {
 
 async function loadProducts() {
   if (!currentUser) return;
-  const { data, error } = await supabase.from(DB_TABLE).select("*").eq("user_id", currentUser.id).order("expiry_date", { ascending: true });
-  if (error) throw error;
-  products = data || [];
+  const {products:data}=await api("products_list"); products=data||[];
   render();
 }
 
@@ -338,9 +334,7 @@ async function exportBackup() {
     const { id, user_id, created_at, updated_at, ...fields } = product;
     let receipt = null;
     if (product.receipt_path) {
-      const { data, error } = await supabase.storage.from(RECEIPT_BUCKET).download(product.receipt_path);
-      if (error) throw error;
-      receipt = { name: product.receipt_path.split("/").pop(), type: data.type || "application/octet-stream", data: await fileToBase64(data) };
+      const signed=await api("receipt_signed_url",{path:product.receipt_path}); const response=await fetch(signed.url); if(!response.ok)throw new Error("Falha ao baixar comprovante."); const blob=await response.blob(); receipt={name:product.receipt_path.split("/").pop(),type:blob.type||"application/octet-stream",data:await fileToBase64(blob)};
     }
     return { ...fields, receipt };
   }));
@@ -374,9 +368,7 @@ async function importBackup(file) {
         if (blob.size > MAX_RECEIPT_SIZE || !ALLOWED_RECEIPT_TYPES.has(blob.type)) continue;
         const safeName = String(item.receipt.name || "comprovante").normalize("NFKD").replace(/[^\w.-]+/g, "-").slice(-100);
         receiptPath = `${currentUser.id}/${crypto.randomUUID()}-${safeName}`;
-        const { error } = await supabase.storage.from(RECEIPT_BUCKET).upload(receiptPath, blob, { contentType: blob.type, upsert: false });
-        if (error) throw error;
-        uploadedPaths.push(receiptPath);
+        const uploaded=await api("receipt_upload",{name:safeName,type:blob.type,data:await fileToBase64(blob)}); receiptPath=uploaded.path; uploadedPaths.push(receiptPath);
       }
       rows.push({
         user_id: currentUser.id,
@@ -391,13 +383,12 @@ async function importBackup(file) {
       });
     }
     if (rows.length) {
-      const { error } = await supabase.from(DB_TABLE).insert(rows);
-      if (error) throw error;
+      for(const row of rows) await api("product_save",{product:row});
     }
     await loadProducts();
     showToast(`${rows.length} produto(s) importado(s) para sua conta.`);
   } catch (error) {
-    if (uploadedPaths.length) await supabase.storage.from(RECEIPT_BUCKET).remove(uploadedPaths);
+    for (const path of uploadedPaths) await api("receipt_delete", { path }).catch(() => {});
     throw error;
   }
 }
@@ -406,24 +397,18 @@ async function clearAllData() {
   if (!products.length) return showToast("Não há produtos para apagar.");
   if (!confirm("Apagar todos os produtos e comprovantes da sua conta? Esta ação não pode ser desfeita.")) return;
   const paths = products.map((product) => product.receipt_path).filter(Boolean);
-  const { error } = await supabase.from(DB_TABLE).delete().eq("user_id", currentUser.id);
-  if (error) return showToast(friendlyError(error, "Não foi possível apagar os dados."));
-  if (paths.length) {
-    const { error: storageError } = await supabase.storage.from(RECEIPT_BUCKET).remove(paths);
-    if (storageError) showToast("Cadastros apagados; alguns comprovantes antigos não foram removidos.");
-  }
+  try { for(const p of [...products]) await api("product_delete",{id:p.id}); } catch(error) { return showToast(friendlyError(error,"Não foi possível apagar os dados.")); }
   await loadProducts();
   showToast("Os produtos da sua conta foram apagados.");
 }
 
 function openSettings() {
   if (!currentUser) return;
-  const metadata = currentUser.user_metadata || {};
-  $("#settings-name").value = metadata.full_name || metadata.display_name || metadata.name || "";
+  $("#settings-name").value=currentUser.full_name||"";
   $("#settings-email").value = currentUser.email || "";
   $("#settings-password").value = "";
   $("#settings-error").hidden = true;
-  $("#settings-hint").textContent = "Ao alterar o e-mail, o Supabase poderá solicitar confirmação no novo endereço.";
+  $("#settings-hint").textContent = "Ao alterar o e-mail, enviaremos um link de confirmação para o novo endereço.";
   $("#settings-dialog").showModal();
   closeSettingsMenu();
 }
@@ -440,19 +425,17 @@ async function saveSettings(event) {
     errorEl.hidden = false;
     return;
   }
-  if (password && password.length < 6) {
-    errorEl.textContent = "A nova senha precisa ter pelo menos 6 caracteres.";
+  if (password && password.length < 10) {
+    errorEl.textContent = "A nova senha precisa ter pelo menos 10 caracteres.";
     errorEl.hidden = false;
     return;
   }
-  const metadata = currentUser.user_metadata || {};
-  const changes = {};
-  if (email !== (currentUser.email || "")) changes.email = email;
-  if (password) changes.password = password;
-  if (name !== (metadata.full_name || metadata.display_name || metadata.name || "")) {
-    changes.data = { ...metadata, full_name: name };
-  }
-  if (!Object.keys(changes).length) {
+  const emailChanged=email!==(currentUser.email||"");
+  const changes={};
+  if(emailChanged)changes.email=true;
+  if(name!==(currentUser.full_name||""))changes.full_name=name;
+  if(password)changes.password=password;
+  if(!Object.keys(changes).length){
     $("#settings-dialog").close();
     return showToast("Nenhuma alteração para salvar.");
   }
@@ -460,18 +443,13 @@ async function saveSettings(event) {
   button.disabled = true;
   button.textContent = "Salvando…";
   try {
-    const { data, error } = await supabase.auth.updateUser(
-      changes,
-      changes.email ? { emailRedirectTo: RANGELLAB_EMAIL_CONFIRMATION_URL } : undefined,
-    );
-    if (error) throw error;
-    if (data.user) {
-      currentUser = data.user;
-
-    }
+    if(email!==(currentUser.email||"")){await api("request_email_change",{email});}
+    const data=await api("account_update",{full_name:name,password});
+    if(data.password_changed){clearTokens();currentUser=null;$("#settings-dialog").close();await applySession(null);return showToast("Senha atualizada. Entre novamente.");}
+    currentUser={...currentUser,full_name:name};
     $("#settings-password").value = "";
     $("#settings-dialog").close();
-    showToast(changes.email ? "Dados salvos. Confirme o novo e-mail, se solicitado." : "Dados da conta atualizados.");
+    showToast(emailChanged ? "Enviamos um link para confirmar o novo e-mail." : "Dados da conta atualizados.");
   } catch (error) {
     errorEl.textContent = friendlyError(error, "Não foi possível atualizar os dados da conta.");
     errorEl.hidden = false;
@@ -482,16 +460,14 @@ async function saveSettings(event) {
 }
 
 async function deleteAccount() {
-  const confirmed = confirm("Excluir definitivamente sua conta Borges & Rangel? Todos os produtos e comprovantes desta conta serão apagados. Esta ação não pode ser desfeita.");
+  const confirmed = confirm("Excluir definitivamente sua conta do Garantia? Todos os produtos e comprovantes desta conta serão apagados. Esta ação não pode ser desfeita.");
   if (!confirmed) return;
   const button = $("#settings-delete-account");
   button.disabled = true;
   button.textContent = "Excluindo conta…";
   try {
-    const { error } = await supabase.functions.invoke("request-account-deletion", { method: "POST" });
-    if (error) throw error;
-    $("#settings-dialog").close();
-    showToast(data?.message || "Solicitação preparada. Verifique seu e-mail para confirmar a exclusão.");
+    await api("account_delete");
+    clearTokens(); currentUser=null; $("#settings-dialog").close(); await applySession(null); showLoginMessage("Sua conta do Garantia foi excluída.");
   } catch (error) {
     showToast(friendlyError(error, "Não foi possível excluir a conta. Verifique se a função segura delete-account está implantada no Supabase."));
   } finally {
@@ -519,7 +495,7 @@ function showLoginMessage(message, isError = true) {
 }
 
 async function applySession(session) {
-  const user = session?.user;
+  const user = session?.user || null;
   if (!user) {
     currentUser = null;
     products = [];
@@ -586,20 +562,15 @@ async function loadVersionHistory() {
 function bindEvents() {
   $("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!supabase) return showLoginMessage("A configuração do Supabase ainda não foi carregada.");
+    if (!API_URL.startsWith("https://")) return showLoginMessage("A configuração da API do Garantia não foi carregada.");
     const button = $("#login-submit");
     button.disabled = true;
     button.textContent = "Entrando…";
     showLoginMessage("");
-    const { data, error } = await supabase.auth.signInWithPassword({ email: $("#login-email").value.trim(), password: $("#login-password").value });
-    button.disabled = false;
-    button.textContent = "Entrar";
-    if (error) return showLoginMessage(/invalid login credentials/i.test(error.message) ? "E-mail ou senha incorretos." : friendlyError(error, "Não foi possível entrar."));
-    await applySession(data.session);
+    try { const data=await api("signin",{email:$("#login-email").value.trim(),password:$("#login-password").value},false); saveTokens(data); await applySession(data); } catch(error) { showLoginMessage(friendlyError(error,"E-mail ou senha incorretos.")); } finally { button.disabled=false; button.textContent="Entrar"; }
   });
   $("#menu-sign-out").addEventListener("click", async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) showToast("Não foi possível sair da conta.");
+    try{await api("signout",{refresh_token:refreshToken});}catch{} clearTokens(); await applySession(null);
   });
   $("#add-product").addEventListener("click", () => openForm());
   $("#empty-add").addEventListener("click", () => openForm());
@@ -684,15 +655,8 @@ async function init() {
   setTheme(localStorage.getItem("garantia-theme") || "dark");
   bindEvents();
   void loadVersionHistory();
-  if (!supabase) {
-    showLoginMessage("A configuração do Supabase não foi encontrada.");
-    $("#login-submit").disabled = true;
-    return;
-  }
-  supabase.auth.onAuthStateChange((_event, session) => window.setTimeout(() => void applySession(session), 0));
-  const { data, error } = await supabase.auth.getSession();
-  if (error) showLoginMessage(friendlyError(error, "Não foi possível verificar sua sessão."));
-  await applySession(data?.session || null);
+  let saved=null; try{saved=JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch{}
+  if(saved?.accessToken&&saved?.refreshToken){accessToken=saved.accessToken;refreshToken=saved.refreshToken;try{let me;try{me=await api("me");}catch{if(await refreshSession())me=await api("me");}if(me?.user)await applySession({user:me.user});else{clearTokens();await applySession(null);}}catch{clearTokens();await applySession(null);}}else await applySession(null);
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
 

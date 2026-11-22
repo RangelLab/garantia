@@ -8,12 +8,13 @@ Requer Bun. Execute `bun run dev` e abra o endereço exibido no terminal.
 
 ## Dados e privacidade
 
-- Entre com a mesma conta Borges & Rangel usada nos outros aplicativos.
-- Cadastros são guardados na tabela Supabase `warranty_products`, com RLS por usuário.
+- O Garantia usa conta, senha e sessões próprias, independentes dos demais aplicativos Borges & Rangel.
+- Dados de conta e produtos ficam no schema Supabase `garantia` (`accounts`, `profiles`, `sessions`, `email_tokens`, `auth_rate_limits` e `products`).
+- O cadastro, a confirmação de e-mail e a recuperação de senha usam a Edge Function `garantia-api` e o Resend.
 - Comprovantes ficam no bucket privado `warranty-receipts`; o app gera links temporários para abri-los.
 - Use **Exportar backup** para guardar uma cópia JSON, incluindo os comprovantes, e **Importar backup** para adicionar os produtos a outra conta/aparelho.
 - Os avisos de vencimento aparecem quando o app é aberto; esta versão não envia notificações em segundo plano.
 
-A estrutura Supabase está em `supabase/migrations/20261031231236_warranty_products_and_receipts.sql`.
+A tabela antiga `public.warranty_products` foi copiada para `garantia.products`, preservando os IDs dos registros. Ela permanece como cópia de segurança durante a validação; o Dashboard já consulta o novo schema.
 
-O site é estático e pode ser publicado no GitHub Pages em `/garantia/`.
+O site é estático e é publicado pelo Cloudflare Pages; configure `GARANTIA_PUBLIC_URL` na Edge Function com a URL pública efetiva do app para que os links de confirmação e recuperação de senha retornem ao endereço correto.
