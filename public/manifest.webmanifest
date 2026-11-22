@@ -1,0 +1,13 @@
+{
+  "name": "Garantia By BoRan Studio",
+  "short_name": "Garantia",
+  "description": "Comprovantes e prazos de garantia organizados em um só lugar.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B0D10",
+  "theme_color": "#0B0D10",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

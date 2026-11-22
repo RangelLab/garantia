@@ -1,148 +1,63 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#101815" />
-    <meta name="description" content="Guarde seus comprovantes e acompanhe o prazo de garantia dos seus produtos." />
-    <title>Garantia By Borges &amp; Rangel</title>
-    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0D10" />
+    <meta
+      name="description"
+      content="Guarde seus comprovantes e acompanhe o prazo de garantia dos seus produtos."
+    />
+    <meta property="og:title" content="Garantia By BoRan Studio" />
+    <meta
+      property="og:description"
+      content="Guarde seus comprovantes e acompanhe o prazo de garantia dos seus produtos."
+    />
+    <title>Garantia By BoRan Studio</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("garantia-theme");
+          var theme = saved === "light" || saved === "dark" ? saved : "dark";
+          document.documentElement.classList.toggle("dark", theme === "dark");
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", theme === "dark" ? "#0B0D10" : "#F8F9FA");
+        } catch (e) {}
+      })();
+      (function () {
+        try {
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              var hadController = Boolean(navigator.serviceWorker.controller);
+              if (!regs.length) return;
+              Promise.all(regs.map(function (r) { return r.unregister(); })).then(function () {
+                if ("caches" in window) {
+                  caches.keys().then(function (keys) {
+                    Promise.all(keys.map(function (k) { return caches.delete(k); })).then(function () {
+                      if (hadController) window.location.reload();
+                    });
+                  });
+                } else if (hadController) {
+                  window.location.reload();
+                }
+              });
+            }).catch(function () {});
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script src="/supabase-config.js"></script>
   </head>
-  <body>
-    <section class="login-screen" id="login-screen" aria-labelledby="login-title">
-      <div class="login-card">
-        <a class="login-brand" href="https://rangellab.github.io/garantia/" aria-label="Garantia By Borges &amp; Rangel">
-          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3 35 11.5v17L20 37 5 28.5v-17L20 3Z"/><path d="M13 25V15h8a4 4 0 0 1 1.1 7.8L26 28M13 20h7"/></svg></span>
-          <span class="brand-copy"><strong>Garantia</strong><small>By Borges &amp; Rangel</small></span>
-        </a>
-        <p class="eyebrow login-eyebrow">CONTA INDEPENDENTE GARANTIA</p>
-        <h1 id="login-title">Suas garantias,<br /><span>sempre à mão.</span></h1>
-        <p class="login-copy">Entre com sua conta própria do Garantia.</p>
-        <form id="login-form" class="login-form">
-          <label class="field">E-mail<input id="login-email" type="email" autocomplete="username" required maxlength="254" placeholder="voce@exemplo.com" /></label>
-          <label class="field">Senha<input id="login-password" type="password" autocomplete="current-password" required maxlength="128" placeholder="Sua senha" /></label>
-          <p class="login-message" id="login-message" role="alert" hidden></p>
-          <button class="primary-button login-submit" id="login-submit" type="submit">Entrar</button>
-        </form>
-        <div class="login-links"><a href="./redefinir-senha.html">Esqueci minha senha</a><a href="./criar-conta.html">Criar conta Garantia</a></div>
-        <p class="login-foot"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg> Seus dados ficam protegidos na sua conta.</p>
-      </div>
-    </section>
-
-    <div class="app-shell" id="app-shell" hidden>
-      <header class="topbar">
-        <a class="brand" href="https://rangellab.github.io/garantia/" aria-label="Garantia By Borges &amp; Rangel — início do app">
-          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3 35 11.5v17L20 37 5 28.5v-17L20 3Z"/><path d="M13 25V15h8a4 4 0 0 1 1.1 7.8L26 28M13 20h7"/></svg></span>
-          <span class="brand-copy"><strong>Garantia</strong><small>By Borges &amp; Rangel</small></span>
-        </a>
-        <div class="topbar-actions settings-menu-wrap">
-          <button class="icon-button settings-button" id="open-settings-menu" type="button" aria-label="Abrir configurações" aria-expanded="false" aria-controls="settings-menu" title="Configurações"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-          <div class="settings-menu" id="settings-menu" hidden>
-            <button type="button" id="menu-user-data"><span class="menu-item-icon">◎</span>Dados do usuário</button>
-            <button type="button" id="menu-theme"><span class="menu-item-icon">◐</span><span id="menu-theme-label">Modo claro</span></button>
-            <button type="button" id="menu-export-backup"><span class="menu-item-icon">↓</span>Exportar backup</button>
-            <button type="button" id="menu-import-backup"><span class="menu-item-icon">↑</span>Importar backup</button>
-            <button type="button" class="menu-danger" id="menu-clear-data"><span class="menu-item-icon">⌫</span>Apagar todos os dados</button>
-            <button type="button" id="menu-version"><span class="menu-item-icon">ⓘ</span>Versão</button>
-            <button type="button" id="menu-sign-out"><span class="menu-item-icon">↪</span>Sair</button>
-          </div>
-        </div>
-      </header>
-
-      <main>
-        <section class="welcome">
-          <div>
-            <p class="eyebrow"><span class="eyebrow-dot"></span> ORGANIZAÇÃO DA CASA</p>
-            <h1>Suas garantias,<br /><span>sempre à mão.</span></h1>
-            <p class="welcome-copy">Guarde comprovantes e saiba quais garantias estão perto do vencimento.</p>
-          </div>
-          <button class="primary-button add-main" id="add-product" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Adicionar produto</span></button>
-        </section>
-
-        <section class="summary" aria-label="Resumo das garantias">
-          <article class="summary-card"><span class="summary-icon active-icon"><svg viewBox="0 0 24 24"><path d="M20 7 10 17l-5-5"/><path d="M12 22a10 10 0 1 0-10-10"/></svg></span><div><span class="summary-label">Garantias ativas</span><strong id="count-active">0</strong></div><span class="summary-note">em dia</span></article>
-          <article class="summary-card"><span class="summary-icon soon-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><span class="summary-label">Vencem em breve</span><strong id="count-soon">0</strong></div><span class="summary-note">próximos 30 dias</span></article>
-          <article class="summary-card"><span class="summary-icon expired-icon"><svg viewBox="0 0 24 24"><path d="m18 6-12 12M6 6l12 12"/><circle cx="12" cy="12" r="9"/></svg></span><div><span class="summary-label">Garantias vencidas</span><strong id="count-expired">0</strong></div><span class="summary-note">consulte o histórico</span></article>
-        </section>
-
-        <section class="notice" id="notice" hidden aria-live="polite"><span class="notice-symbol">!</span><div><strong id="notice-title"></strong><p id="notice-copy"></p></div><button id="dismiss-notice" type="button" aria-label="Fechar aviso">×</button></section>
-
-        <section class="inventory">
-          <div class="inventory-heading">
-            <div><p class="eyebrow">SEU INVENTÁRIO</p><h2>Produtos cadastrados</h2></div>
-            <div class="inventory-tools">
-              <label class="search-box"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg><input id="search" type="search" placeholder="Buscar produto ou loja" aria-label="Buscar produto ou loja" /></label>
-              <button class="secondary-button" id="filter-button" type="button" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10m-7 6h4"/></svg><span id="filter-label">Todos</span></button>
-              <div class="filter-menu" id="filter-menu" hidden><button type="button" data-filter="all">Todos os produtos</button><button type="button" data-filter="active">Garantias ativas</button><button type="button" data-filter="soon">Vencendo em breve</button><button type="button" data-filter="expired">Garantias vencidas</button></div>
-            </div>
-          </div>
-          <div class="product-grid" id="product-grid"></div>
-          <section class="empty-state" id="empty-state">
-            <div class="empty-art"><span class="empty-circle"><svg viewBox="0 0 64 64"><rect x="13" y="9" width="38" height="46" rx="7"/><path d="M23 24h18M23 33h18M23 42h10"/><circle cx="47" cy="47" r="12"/><path d="M47 41v6l4 2"/></svg></span><span class="spark spark-one">✦</span><span class="spark spark-two">✧</span></div>
-            <h3 id="empty-title">Seu espaço está pronto</h3><p id="empty-copy">Cadastre seu primeiro produto para guardar o comprovante e acompanhar a garantia.</p><button class="secondary-button empty-add" id="empty-add" type="button">Adicionar primeiro produto <span>→</span></button>
-          </section>
-        </section>
-
-        <footer class="app-footer">
-          <p><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg> Produtos e comprovantes sincronizados com sua conta.</p><span class="app-version" id="app-version">v1.0.0</span>
-          <input id="import-file" type="file" accept="application/json,.json" hidden />
-        </footer>
-      </main>
-    </div>
-
-    <dialog class="product-dialog version-dialog" id="version-dialog" aria-labelledby="version-title"><div><div class="dialog-heading"><div><p class="eyebrow">GARANTIA BY BORGES &amp; RANGEL</p><h2 id="version-title">Histórico de versões</h2></div><button type="button" class="icon-button close-dialog" id="close-version" aria-label="Fechar">×</button></div><div class="version-current">Versão instalada <strong id="version-current">v1.0.0</strong></div><ol class="version-list" id="version-list"><li class="version-loading">Carregando histórico…</li></ol></div></dialog>
-
-    <dialog class="product-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
-      <form id="settings-form">
-        <div class="dialog-heading"><div><p class="eyebrow">SUA CONTA</p><h2 id="settings-title">Configurações</h2></div><button type="button" class="icon-button close-dialog" id="close-settings" aria-label="Fechar">×</button></div>
-        <div class="form-grid settings-grid">
-          <label class="field full-field">Nome<input id="settings-name" type="text" maxlength="100" autocomplete="name" placeholder="Seu nome" /></label>
-          <label class="field full-field">E-mail<input id="settings-email" type="email" maxlength="254" autocomplete="email" required /></label>
-          <label class="field full-field">Nova senha <span>(deixe em branco para manter a atual)</span><input id="settings-password" type="password" minlength="6" maxlength="128" autocomplete="new-password" placeholder="Mínimo de 6 caracteres" /></label>
-        </div>
-        <p class="form-error" id="settings-error" role="alert" hidden></p>
-        <p class="settings-hint" id="settings-hint">Ao alterar o e-mail, o Supabase poderá solicitar confirmação no novo endereço.</p>
-        <button type="button" class="danger-button delete-account-button" id="settings-delete-account">Excluir minha conta</button>
-        <div class="dialog-actions settings-actions"><button type="button" class="secondary-button" id="cancel-settings">Cancelar</button><button type="submit" class="primary-button" id="save-settings">Salvar alterações</button></div>
-      </form>
-    </dialog>
-
-    <dialog class="product-dialog" id="product-dialog" aria-labelledby="dialog-title">
-      <form id="product-form">
-        <div class="dialog-heading"><div><p class="eyebrow">NOVO CADASTRO</p><h2 id="dialog-title">Adicionar produto</h2></div><button type="button" class="icon-button close-dialog" id="close-dialog" aria-label="Fechar">×</button></div>
-        <input id="product-id" type="hidden" />
-        <div class="form-grid">
-          <label class="field full-field">Nome do produto <span>*</span><input id="product-name" name="name" type="text" maxlength="100" placeholder="Ex.: Fone de ouvido" required /></label>
-          <label class="field">Loja onde comprou<input id="product-store" name="store" type="text" maxlength="100" placeholder="Ex.: Loja online" /></label>
-          <label class="field">Marca ou modelo<input id="product-model" name="model" type="text" maxlength="100" placeholder="Opcional" /></label>
-          <label class="field">Data da compra <span>*</span><input id="purchase-date" name="purchaseDate" type="date" required /></label>
-          <label class="field">Prazo de garantia <span>*</span><span class="input-suffix"><input id="warranty-months" name="warrantyMonths" type="number" min="0" max="600" value="12" required /><span>meses</span></span></label>
-          <label class="field full-field">Anotações<textarea id="product-notes" name="notes" rows="2" maxlength="500" placeholder="Número de série, observações…"></textarea></label>
-          <label class="receipt-field full-field" for="receipt-file"><span class="receipt-icon"><svg viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5"/><path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg></span><span><strong id="receipt-name">Anexar comprovante</strong><small>Imagem ou PDF · sincronizado na sua conta · até 10 MB</small></span><input id="receipt-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,application/pdf" /></label>
-          <button type="button" class="remove-receipt" id="remove-receipt" hidden>Remover comprovante anexado</button>
-        </div>
-        <p class="form-error" id="form-error" role="alert" hidden></p>
-        <div class="dialog-actions"><button type="button" class="secondary-button" id="cancel-dialog">Cancelar</button><button type="submit" class="primary-button" id="save-product">Salvar produto</button></div>
-      </form>
-    </dialog>
-
-    <dialog class="confirm-dialog" id="confirm-dialog"><div class="confirm-mark"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></div><h2 id="confirm-title">Apagar produto?</h2><p id="confirm-copy">O cadastro e seu comprovante serão removidos deste aparelho.</p><div class="dialog-actions"><button type="button" class="secondary-button" id="confirm-cancel">Cancelar</button><button type="button" class="danger-button" id="confirm-delete">Apagar produto</button></div></dialog>
-
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <dialog class="product-dialog details-dialog" id="details-dialog" aria-labelledby="details-title"><div><div class="dialog-heading"><div><p class="eyebrow">DETALHES DO PRODUTO</p><h2 id="details-title">Produto</h2></div><button type="button" class="icon-button close-dialog" id="close-details" aria-label="Fechar">×</button></div><dl class="details-list"><div><dt>Marca</dt><dd id="details-model">—</dd></div><div><dt>Loja</dt><dd id="details-store">—</dd></div><div><dt>Data da compra</dt><dd id="details-purchase">—</dd></div><div><dt>Prazo de garantia</dt><dd id="details-warranty">—</dd></div><div><dt>Vencimento</dt><dd id="details-expiry">—</dd></div><div class="details-full"><dt>Anotações</dt><dd id="details-notes">—</dd></div></dl><div class="details-actions"><button type="button" class="secondary-button" id="details-receipt" hidden>Ver comprovante</button><button type="button" class="primary-button" id="details-edit">Editar</button></div></div></dialog>
-
-    <template id="product-template">
-      <article class="product-card">
-        <div class="product-card-head"><span class="product-symbol"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 13h8m-8 4h6"/></svg></span><span class="status-pill"></span><button class="card-menu-trigger" type="button" aria-label="Opções do produto">•••</button><div class="card-menu" hidden><button type="button" data-action="edit">Editar</button><button type="button" data-action="receipt" hidden>Ver comprovante</button><button type="button" data-action="delete" class="menu-danger">Apagar</button></div></div>
-        <h3 class="product-name"></h3><p class="product-model"></p>
-        <div class="warranty-track"><div class="track-labels"><span>Compra</span><span class="remaining-label"></span><span>Fim da garantia</span></div><div class="track-line"><span class="track-progress"></span><span class="track-dot"></span></div><div class="track-dates"><strong class="purchase-label"></strong><strong class="expiry-label"></strong></div></div>
-        <div class="product-card-foot"><span class="days-badge"></span><button class="details-button" type="button" data-action="details">Ver detalhes <span>→</span></button></div>
-      </article>
-    </template>
-
-    <script src="./supabase-config.js"></script>
-    <script type="module" src="./app.js"></script>
+  <body class="bg-[#F8F9FA] text-[#111827] dark:bg-[#0B0D10] dark:text-[#F3F5F7] antialiased selection:bg-emerald-500/20 selection:text-emerald-700 dark:selection:text-emerald-300">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -31,7 +31,7 @@ const next = (value, kind) => {
   return `${major}.${minor}.${patch}`;
 };
 function markdown(history) {
-  const lines = ["# Histórico de versões do Garantia", "", "Registro das versões do Garantia by Borges & Rangel. O versionamento segue SemVer (MAJOR.MINOR.PATCH), independente dos demais aplicativos.", ""];
+  const lines = ["# Histórico de versões do Garantia", "", "Registro das versões do Garantia by BoRan Studio. O versionamento segue SemVer (MAJOR.MINOR.PATCH), independente dos demais aplicativos.", ""];
   for (const entry of history) {
     lines.push(`## v${entry.version} (${entry.date})`, "", `**${entry.title || entry.changes[0]}**`, "");
     for (const change of entry.changes) lines.push("- " + change);

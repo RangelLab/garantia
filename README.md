@@ -1,14 +1,14 @@
-# Garantia By Borges & Rangel
+# Garantia By BoRan Studio
 
-Aplicativo da família Borges & Rangel para organizar produtos, comprovantes e prazos de garantia.
+Aplicativo da BoRan Studio para organizar produtos, comprovantes e prazos de garantia.
 
 ## Desenvolvimento
 
-Requer Bun. Execute `bun run dev` e abra o endereço exibido no terminal.
+Requer Node.js. Execute `npm run dev` e abra o endereço exibido no terminal.
 
 ## Dados e privacidade
 
-- O Garantia usa conta, senha e sessões próprias, independentes dos demais aplicativos Borges & Rangel.
+- O Garantia usa conta, senha e sessões próprias, independentes dos demais aplicativos BoRan Studio.
 - Dados de conta e produtos ficam no schema Supabase `garantia` (`accounts`, `profiles`, `sessions`, `email_tokens`, `auth_rate_limits` e `products`).
 - O cadastro, a confirmação de e-mail e a recuperação de senha usam a Edge Function `garantia-api` e o Resend.
 - Comprovantes ficam no bucket privado `warranty-receipts`; o app gera links temporários para abri-los.

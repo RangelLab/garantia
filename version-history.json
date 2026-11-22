@@ -1,5 +1,18 @@
 [
   {
+    "version": "1.2.0",
+    "date": "2026-11-22",
+    "timestamp": "2026-11-22T14:50:00.000Z",
+    "title": "Redesign completo estilo Linear, visualizador integrado e calendário",
+    "changes": [
+      "Nova interface estilo Linear com modos escuro e claro completos e navegação lateral/inferior otimizada para celular.",
+      "Visualizador integrado de comprovantes (imagens com zoom/rotação e PDF embutido) direto no aplicativo.",
+      "Suporte a categorias, valor do produto em reais, filtros avançados e ordenação flexível.",
+      "Central de alertas de vencimento e calendário mensal interativo de garantias.",
+      "Cadastro rápido com atalhos de prazo de 1 clique e área de upload por arrastar e soltar."
+    ]
+  },
+  {
     "version": "1.1.2",
     "date": "2026-11-01",
     "timestamp": "2026-11-02T02:00:00.000Z",

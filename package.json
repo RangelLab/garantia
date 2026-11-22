@@ -1,11 +1,30 @@
 {
-  "name": "garantia-by-borges-rangel",
-  "version": "1.1.0",
+  "name": "garantia-by-boran-studio",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot server.ts",
+    "dev": "tsx server.ts",
+    "start": "NODE_ENV=production tsx server.ts",
+    "build": "vite build",
+    "lint": "tsc --noEmit",
     "version:check": "node scripts/bump-version.mjs check",
     "version:history": "node scripts/bump-version.mjs regenerate"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "express": "^5.3.0",
+    "lucide-react": "^1.77.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
   }
 }

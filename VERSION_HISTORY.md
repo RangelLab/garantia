@@ -1,6 +1,16 @@
 # Histórico de versões do Garantia
 
-Registro das versões do Garantia by Borges & Rangel. O versionamento segue SemVer (MAJOR.MINOR.PATCH), independente dos demais aplicativos.
+Registro das versões do Garantia by BoRan Studio. O versionamento segue SemVer (MAJOR.MINOR.PATCH), independente dos demais aplicativos.
+
+## v1.2.0 (2026-11-22)
+
+**Redesign completo estilo Linear, visualizador integrado e calendário**
+
+- Nova interface estilo Linear com modos escuro e claro completos e navegação lateral/inferior otimizada para celular.
+- Visualizador integrado de comprovantes (imagens com zoom/rotação e PDF embutido) direto no aplicativo.
+- Suporte a categorias, valor do produto em reais, filtros avançados e ordenação flexível.
+- Central de alertas de vencimento e calendário mensal interativo de garantias.
+- Cadastro rápido com atalhos de prazo de 1 clique e área de upload por arrastar e soltar.
 
 ## v1.1.2 (2026-11-01)
 
