@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0D10" />
+    <meta
+      name="description"
+      content="Guarde seus comprovantes e acompanhe o prazo de garantia dos seus produtos."
+    />
+    <meta property="og:title" content="Garantia By BoRan Studio" />
+    <meta
+      property="og:description"
+      content="Guarde seus comprovantes e acompanhe o prazo de garantia dos seus produtos."
+    />
+    <title>Garantia By BoRan Studio</title>
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("garantia-theme");
+          var theme = saved === "light" || saved === "dark" ? saved : "dark";
+          document.documentElement.classList.toggle("dark", theme === "dark");
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", theme === "dark" ? "#0B0D10" : "#F8F9FA");
+        } catch (e) {}
+      })();
+      (function () {
+        try {
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              var hadController = Boolean(navigator.serviceWorker.controller);
+              if (!regs.length) return;
+              Promise.all(regs.map(function (r) { return r.unregister(); })).then(function () {
+                if ("caches" in window) {
+                  caches.keys().then(function (keys) {
+                    Promise.all(keys.map(function (k) { return caches.delete(k); })).then(function () {
+                      if (hadController) window.location.reload();
+                    });
+                  });
+                } else if (hadController) {
+                  window.location.reload();
+                }
+              });
+            }).catch(function () {});
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script src="./supabase-config.js"></script>
+    <script type="module" crossorigin src="./assets/index-eiezS8Te.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CGSzAGPS.css">
+  </head>
+  <body class="bg-[#F8F9FA] text-[#111827] dark:bg-[#0B0D10] dark:text-[#F3F5F7] antialiased selection:bg-emerald-500/20 selection:text-emerald-700 dark:selection:text-emerald-300">
+    <div id="root"></div>
+  </body>
+</html>
